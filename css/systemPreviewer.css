@@ -1,0 +1,57 @@
+body {
+	padding-top: 120px;
+}
+
+.navbar-inner .container.pull-left {
+	padding-left: 20px;
+}
+
+.subnav {
+	position: fixed;
+	background: rgb(240, 240, 240);
+	top: 40px;
+	height: 37px;
+	width: 100%;
+}
+
+.subnav .nav-pills {
+	padding-left: 10px;
+}
+
+.well {
+	padding: 10px 10px 10px 10px; 
+}
+
+.sidebar-nav {
+	height: 900px;
+}
+
+.hero-unit {
+	height: 800px;
+}
+
+.controls {
+	margin-right: 10px;
+}
+
+#sortBy {
+	margin-top: 3px;
+}
+
+#searchBar {
+	margin-top: 4px;
+}
+
+#searchField {
+	margin-right: -5px;
+}
+
+#publishCheckbox {
+	margin-top: 10px;
+}
+
+#previewFrame {
+	width: 810px;
+	height: 100%;
+	
+}

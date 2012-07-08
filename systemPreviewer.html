@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>System Previewer</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+	<script type="text/javascript" src="libs/jquery.min.js"></script>
+	<script type="text/javascript" src="libs/underscore-min.js"></script>
+	<script type="text/javascript" src="libs/backbone-min.js"></script>
+	<script type="text/javascript" src="libs/bootstrap.min.js"></script>
+	<script type="text/javascript" src="libs/bootstrap-typeahead.js"></script>
+	<script type="text/javascript" src="libs/bootstrap-dropdown.js"></script>
+	<script type="test/javascript" src="libs/bootstrap-tooltip.js"></script>
+	<script type="text/template" id="previewTemplate">
+			<td><%= accountId %></td>
+			<td><%= accountName %></td>
+			<td><%= objectName %></td>
+			<td>
+					<% if (isPublished) { %> 
+						<i class="icon-ok-sign"></i> <% } else { %>
+						<i class="icon-remove-sign"></i> <% } %>
+			</td>
+			<td>
+				<div id="actionBtnGrp" class="btn-group pull-right">
+					<a id="previewBtn" href=<%= previewLink %> target="previewFrame" class="btn btn-mini" rel="tooltip" title="Preview">
+						<i class="icon-edit"></i>
+					</a>
+					<a id="previewTabBtn" href=<%= previewLink %> target="_blank" class="btn btn-mini" rel="tooltip" title="Preview In Tab">
+						<i class="icon-share"></i>
+					</a>
+					<a id="fbLinkBtn" href=<%= fbLink %> target="_blank" class="btn btn-mini" rel="tooltip" title="Link To Facebook Page">
+						<i class="icon-share-alt"></i>
+					</a>
+				</div>
+			</td>
+	</script>
+	<script type="text/javascript" src="js/main.js"></script>
+
+	<link rel="stylesheet" href="css/bootstrap.css" type="text/css" />
+	<link rel="stylesheet" href="css/systemPreviewer.css" type="text/css" />	
+</head>
+<body>
+	<div id="previewer">
+		<div class="navbar navbar-fixed-top">
+			<div class="navbar-inner">
+				<div class="container pull-left">
+					<a class="brand" href="#">System Previewer</a>
+					<ul class="nav">
+						<li id="pages" class="active">
+							<a href="#pages">Pages</a>
+						</li>
+						<li id="campaigns">
+							<a href="#campaigns">Campaigns</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="subnav">
+			<ul class="nav nav-pills">
+		    <li class="dropdown">
+		      <a id="sortBy" class="dropdown-toggle" data-toggle="dropdown" href="#">Sort By<b class="caret"></b></a>
+		      <ul class="dropdown-menu">
+		        <li id="sortById">
+		        	<a href="#AccountId">Account ID</a>
+		        </li>
+		        <li id="sortByAccountName">
+		        	<a href="#AccountName">Account Name</a>
+		        </li>
+		        <li id="sortByObjectName">
+		        	<a href="#ObjectName">Object Name</a>
+		        </li>
+		      </ul>
+		    </li>
+		    <li id="searchBar" class="controls">
+		    	<div class="input-append">
+		    		<input class="span2" id="searchField" type="text" data-provide="typeahead">
+		    		<button id="searchBtn" class="btn">
+		    			<i class="icon-search"></i>
+		    		</button>	    
+		    	</div>
+		  	</li>
+		  	<li id="publishCheckbox">
+		  		<label class="checkbox">
+		  			<input id="togglePublished" type="checkbox" value="false">Published
+		  		</label>
+		  	</li>
+		  </ul>
+		</div>
+
+		<div class="container-fluid">
+		  <div class="row-fluid">
+		    <div class="span4">
+		      	<!--Sidebar content-->
+		      	<div class="well sidebar-nav">
+		      	<table class="table table-striped table-condensed">
+		      		<thead>
+		      			<tr>
+		      				<th>ID</th>
+		      				<th>Account</th>
+		      				<th>Object</th>
+		      				<th><i class="icon-question-sign" id="isPublished" rel="tooltip" title="Is Published?"></i></th>
+		      				<th></th>
+		      			</tr>
+		      		</thead>
+		      		<tbody>
+							</tbody>
+						</table>
+		      </div>
+		    </div>
+		    <div class="span8">
+		      <!--Body content-->
+		      <div class="hero-unit">
+		      	<iframe id="previewFrame"></iframe>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+	</div>	
+</body>
+</html>
+
