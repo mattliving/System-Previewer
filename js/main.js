@@ -1,66 +1,122 @@
 $(document).ready(function() {
-	/* Button handlers */ 
-	$('.nav li').click(function() {
-		$this = $(this);
-		if (!$this.hasClass('active')) {
-			$this.addClass('active');
-			$this.attr('id')==="pages" ? $('#campaigns').removeClass('active') : $('#pages').removeClass('active');
-		}
-	});
+	/* Twitter Bootstrap code */
+	$('.dropdown-toggle').dropdown();
 
+	/* Model representing an individual row in our table */
 	var previewObject = Backbone.Model.extend({
     
 	    defaults: {
-	        accountId: "1",
-	        accountName: "test",
-	        objectName: "engage",
+	        accountId: null,
+	        accountName: "",
+	        objectName: "",
 	        type: "",
-	        isPublished: false,
-	        previewLink: "http://www.mattliving.com",
-	        fbLink: "http://www.mattliving.com"
+	        isPublished: "",
+	        previewLink: "",
+	        fbLink: "",
+	        info: {
+	        	appname: "",
+	        	owner: "",
+	        	theme: "",
+	        	objectId: null,
+	        	createdBy: "",
+	        	modifiedBy: "",
+	        	createdOn: "",
+	        	modifiedOn: "",
+	        	publishDate: "",
+	        	expiryDate: ""
+	        }
 	    },
 
 	    initialize: function() {
-	    }
+	    },
 
+	    clear: function() {
+	    	this.destroy();
+	    }
 	});
 
+	/* Collection of preview objects */
 	var previewObjectTable = Backbone.Collection.extend({
 
-	    // Reference to this collection's model.
 	    model: previewObject,
 
-	    // Filter down the list of all campaigns that have been published
+	    // http://test.engagesciences.com/m/dashboard/listObjects
+	    url: "http://192.168.0.5/systempreviewer/data/test.json",
+
+	    /* Filter down the list of all campaigns that have been published */
 	    published: function() {
 	        return this.filter(function(previewObject) { 
-	        	return previewObject.get('isPublished'); 
+	        	return previewObject.get('isPublished').match(/status.*.published/); 
 	        });
 	    },
 
-	    // Filter down the list to only campaigns that have not yet been published
+	    /* Filter down the list to only campaigns that have not yet been published */
 	    unpublished: function() {
 	        return this.without.apply(this, this.published());
 	    }
 	});
 
+	/* Main cached collection of preview objects */
 	var previewObjects = new previewObjectTable;
+	/* Main view consisting of individual preview objects
+	   and bound to our collection */
+	var tableView;
 
 	var previewTableView = Backbone.View.extend({
 
 		el: $("tbody"),
 
 		initialize: function() {
-			_.bindAll(this, "renderPreviewObject");
+			this.collection = new previewObjectTable(previewObjects.models);
+			this.states = {
+				filterType: "type.displayschedule.all",
+				togglePublished: false
+			};
+			this.bind("change:filterType", this.filterByType, this);
+			this.collection.bind("reset", this.render, this);
+			this.render();
 		},
 
 		renderPreviewObject: function(previewObject) {
-			var previewObject = new previewObjectView({model: previewObject});
-			previewObject.render();
-			$(this.el).append(previewObject.el);
+			var view = new previewObjectView({model: previewObject});
+			this.$el.append(view.render().el);
 		},
 
 		render: function() {
-			this.collection.each(this.renderPreviewObject);
+			this.$el.empty();
+			var that = this;
+	        _.each(this.collection.models, function (item) {
+	            that.renderPreviewObject(item);
+	        }, this);
+	        $('[rel=tooltip]').tooltip();
+			$('[rel=popover]').popover();
+		},
+
+		filterByType: function(searchValue) {
+			if (this.states.filterType === "type.displayschedule.all") {
+				this.collection.reset(previewObjects.models);
+			}
+			else {
+				this.collection.reset(previewObjects.models, {silent: true});
+
+				var filterType = this.states.filterType,
+					filtered = _.filter(this.collection.models, function(item) {
+						return item.get('type') === filterType;
+					});
+				this.collection.reset(filtered);
+			}
+			if (searchValue != "") {
+				var searchResults = _.filter(this.collection.models, function(item) {
+				return (item.get('accountId').toString() === searchValue)
+					|| (item.get('accountName') === searchValue);
+				});
+				// Only reset the collection if the search returned results, otherwise
+				// display the filtered results and clear the search field
+				this.collection.reset(searchResults);
+			}
+			if (this.states.togglePublished) {
+				this.collection.reset(this.collection.published());
+			}
 		}
 	});
 
@@ -74,13 +130,16 @@ $(document).ready(function() {
 	    },
 
 	    initialize: function() {            
-	    	_.bindAll(this, 'render');
 	        this.model.bind('change', this.render);
 	        this.model.bind('destroy', this.destroy);
 	    },
 	    render: function() {   
 	    	this.$el.html(this.template(this.model.toJSON()));
 	        return this;
+	    },
+
+	    clear: function() {
+	    	this.model.clear();
 	    }
 	});
 
@@ -89,103 +148,109 @@ $(document).ready(function() {
 		el: $('#previewer'),
 
 		events: {
+			"click .navbar-fixed-top li": "setActive",
+			"click #all": "setFilter",
+			"click #page": "setFilter",
+			"click #campaign": "setFilter",
 			"click #sortById": "sortById",
 			"click #sortByAccountName": "sortByAccountName",
 			"click #sortByObjectName": "sortByObjectName",
-			"submit #searchField": "searchOnEnter",
-			"click #searchBtn": "searchOnClick",
+			"submit #searchField": "search",
+			"click #searchBtn": "search",
 			"click #togglePublished": "togglePublished"
 		},
 
 		initialize: function() {
 
-			// this.sortById          = this.$('#sortById');
-			// this.sortByAccountName = this.$('#sortByAccountName');
-			// this.sortByObjectName  = this.$('#sortByObjectName');
-			this.searchBar       = this.$('#searchBar');
-			this.searchBtn       = this.$('#searchBtn');
-			this.publishCheckbox = this.$('#togglePublished');
+			// JSON request 
+			var that = this;
+			previewObjects.fetch({success: function() {
+				tableView = new previewTableView();
 
-			//previewObjects.bind('add', this.addOne);
-			//previewObjects.bind('reset', this.render);
+				/* Init preview frame to hold the link for the first model in our collection */
+				$('#previewFrame').attr('src',previewObjects.first().get('previewLink'));
+				/* Init typeahead. Must occur after collection has been initialised */
+				that.initTypeahead();
+			}});
 
-			var view = new previewObject();
-			previewObjects.add(view);
-
-			var test = new previewObject({
-				'accountId': '99',
-				'accountName': 'nokia',
-				'isPublished': 'true',
-				'previewLink': 'http://www.engagesciences.com',
-				'fbLink': 'http://www.mattliving.com'
-			});
-			previewObjects.add(test);
-
-			this.addAll();
-
-			/* Init preview frame to hold the link for the first model in our collection */
-			$('#previewFrame').attr('src',previewObjects.first().get('previewLink'));
-
-			/* JSON request
-			previewObjects.fetch(); */
+			this.bind("change:searchField", this.clearSearchField, this);
+			this.searchField = $('#searchField');
+			this.sortState = "";
 		},
 
-		addOne: function(previewObject) {
-			var view = new previewObjectView({model: previewObject});
-			$('tbody').append(view.render().el);
+		setActive: function(e) {
+			$('.navbar-fixed-top li').removeClass('active');
+			$(e.currentTarget).addClass('active');
 		},
 
-		addAll: function() {
-			previewObjects.each(this.addOne);
+		/* Uses the id of the nav dropdown to set the filter state of our view */
+		setFilter: function(e) {
+			var temp = "type.displayschedule." + e.currentTarget.id;
+			if (tableView.states.filterType === temp) this.clearSearchField();
+			tableView.states.filterType = temp;
+			tableView.trigger("change:filterType", this.searchField.val());
 		},
 
-		render: function() {
-			
+		search: function() {
+			tableView.trigger("change:filterType", this.searchField.val());	
+		},
+
+		clearSearchField: function() {
+			this.searchField.val("");
 		},
 
 		sortById: function() {
-			
+			if (this.sortState === "byId") {
+				tableView.collection.comparator = function(previewObject) {
+					return -previewObject.get("accountId");
+				};
+				this.sortState = "";
+			}
+			else {
+				tableView.collection.comparator = function(previewObject) {
+					return previewObject.get("accountId");
+				};
+				this.sortState = "byId";
+			}
+			tableView.collection.sort();
 		},
 
 		sortByAccountName: function() {
-			
+			tableView.collection.comparator = function(previewObject) {
+				return previewObject.get("accountName");
+			};
+			tableView.collection.sort();
 		},
 
 		sortByObjectName: function() {
-			
-		},
-
-		searchOnEnter: function() {
-			
-		},
-
-		searchOnClick: function() {
-			
+			tableView.collection.comparator = function(previewObject) {
+				return previewObject.get("objectName");
+			};
+			tableView.collection.sort();
 		},
 
 		togglePublished: function(e) {
+			tableView.states.togglePublished = e.currentTarget.checked;
+			tableView.trigger("change:filterType", this.searchField.val());
+		},
 
-			// Render only published items
-			if (e.currentTarget.checked===true) {
-				/*_.each(previewObjects.published(), function(preview) {
-					preview.remove();
-				});*/
-				$('tr').hide();
-			}
-			else {
-			}
+		/* Initialize typeahead source array to contain Account ID and 
+		   Account Name model data for current collection using map-reduce */
+		initTypeahead: function() {
+			var array = _.map(previewObjects.models, function(previewObject) {
+				return [previewObject.get("accountId").toString(),
+						previewObject.get("accountName")];
+			});
+			array = _.uniq(_.reduce(array, function(a, b) {
+				return a.concat(b);
+			}, []));
+			var options = {
+				source: array
+			};
+			$('#searchField').typeahead(options);
 		}
 	});
 
 	var app = new appView;
 
-	/* Twitter Bootstrap code */
-	$('.typeahead').typeahead();
-	$('.dropdown-toggle').dropdown();
-	$('[rel=tooltip]').tooltip();
 });
-
-/*
-
-{ %> <i class="icon-ok-sign"></i> %< } 
-					else { %> <i class="icon-remove-sign"></i> %< } */
