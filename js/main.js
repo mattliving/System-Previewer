@@ -93,30 +93,30 @@ $(document).ready(function() {
 		},
 
 		filterByType: function(searchValue) {
-			if (this.states.filterType === "type.displayschedule.all") {
-				this.collection.reset(previewObjects.models);
-			}
-			else {
-				this.collection.reset(previewObjects.models, {silent: true});
+			this.collection.reset(previewObjects.models, {silent: true});
 
-				var filterType = this.states.filterType,
-					filtered = _.filter(this.collection.models, function(item) {
-						return item.get('type') === filterType;
-					});
-				this.collection.reset(filtered);
-			}
 			if (searchValue != "") {
 				var searchResults = _.filter(this.collection.models, function(item) {
 				return (item.get('accountId').toString() === searchValue)
 					|| (item.get('accountName') === searchValue);
 				});
-				// Only reset the collection if the search returned results, otherwise
-				// display the filtered results and clear the search field
-				this.collection.reset(searchResults);
+				this.collection.reset(searchResults, {silent: true});
 			}
+
+			if (this.states.filterType !== "type.displayschedule.all") {
+
+				var filterType = this.states.filterType,
+					filtered = _.filter(this.collection.models, function(item) {
+						return item.get('type') === filterType;
+					});
+				this.collection.reset(filtered, {silent: true});
+			}
+
 			if (this.states.togglePublished) {
-				this.collection.reset(this.collection.published());
+				this.collection.reset(this.collection.published(), {silent: true});
 			}
+
+			this.collection.trigger("reset");
 		}
 	});
 
